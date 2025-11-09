@@ -1,0 +1,48 @@
+{
+  "name": "yescode-stats",
+  "displayName": "Yescode Stats",
+  "description": "Display Yescode subscription balance in VS Code status bar",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "yescode.setApiKey",
+        "title": "Yescode: Set API Key"
+      },
+      {
+        "command": "yescode.refreshBalance",
+        "title": "Yescode: Refresh Balance"
+      },
+      {
+        "command": "yescode.showBalance",
+        "title": "Yescode: Show Balance"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "typescript": "^5.7.0"
+  }
+}
