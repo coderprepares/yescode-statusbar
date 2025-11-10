@@ -1,9 +1,11 @@
 {
   "name": "yescode-stats",
   "displayName": "YesCode Stats",
+  "publisher": "simplelumine",
   "description": "Display YesCode subscription balance in VS Code status bar",
   "version": "0.1.0",
   "license": "MIT",
+  "icon": "logo.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/simplelumine/yescode-stats.git"
