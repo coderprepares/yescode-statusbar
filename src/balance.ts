@@ -1,94 +1,49 @@
 import { ProfileResponse, BalanceResult } from './types';
-import { formatDate, calculateNextReset, getDaysUntil } from './utils';
+import { calculateSubscriptionBalance } from './subscription';
+import { calculateTeamBalance } from './team';
+import { calculatePayGoBalance } from './paygo';
 
-export function calculateCriticalBalance(data: ProfileResponse): BalanceResult {
-    const {
-        subscription_balance,
-        pay_as_you_go_balance,
-        current_week_spend,
-        subscription_plan,
-        balance_preference,
-        last_week_reset,
-        subscription_expiry
-    } = data;
+export type DisplayMode = 'auto' | 'subscription' | 'team' | 'paygo';
 
-    const nextReset = calculateNextReset(last_week_reset);
-    const resetDate = new Date(last_week_reset);
-    resetDate.setDate(resetDate.getDate() + 7);
-    const resetRelative = getDaysUntil(resetDate.toISOString());
-    const expiryDate = formatDate(subscription_expiry);
-    const expiryRelative = getDaysUntil(subscription_expiry);
-
-    if (balance_preference === 'payg_only') {
-        const tooltip = [
-            `Plan: ${subscription_plan.name}`,
-            `Daily: N/A (PayGo Only Mode)`,
-            `Weekly: N/A (PayGo Only Mode)`,
-            `Reset: ${nextReset} (${resetRelative})`,
-            `Expiry: ${expiryDate} (${expiryRelative})`,
-            `PayGo: $${pay_as_you_go_balance.toFixed(2)}`,
-            ``,
-            'Click to refresh'
-        ].join('\n');
-
-        return {
-            type: 'payGo',
-            percentage: pay_as_you_go_balance,
-            displayText: `YesCode PayGo: $${pay_as_you_go_balance.toFixed(2)}`,
-            tooltip
-        };
+export function calculateBalance(data: ProfileResponse, mode: DisplayMode = 'auto'): BalanceResult {
+    // If forced to subscription mode
+    if (mode === 'subscription') {
+        if (!data.subscription_plan) {
+            // No subscription, fall back to PayGo
+            return calculatePayGoBalance(data);
+        }
+        return calculateSubscriptionBalance(data);
     }
 
-    const weeklyRemaining = subscription_plan.weekly_limit - current_week_spend;
-
-    if (subscription_balance <= 0 || weeklyRemaining <= 0) {
-        const tooltip = [
-            `Plan: ${subscription_plan.name}`,
-            `Daily: $${subscription_balance.toFixed(2)} / $${subscription_plan.daily_balance.toFixed(2)}`,
-            `Weekly: $${weeklyRemaining.toFixed(2)} / $${subscription_plan.weekly_limit.toFixed(2)}`,
-            `Reset: ${nextReset} (${resetRelative})`,
-            `Expiry: ${expiryDate} (${expiryRelative})`,
-            `PayGo: $${pay_as_you_go_balance.toFixed(2)}`,
-            ``,
-            'Click to refresh'
-        ].join('\n');
-
-        return {
-            type: 'payGo',
-            percentage: pay_as_you_go_balance,
-            displayText: `YesCode PayGo: $${pay_as_you_go_balance.toFixed(2)}`,
-            tooltip
-        };
+    // If forced to team mode
+    if (mode === 'team') {
+        if (!data.current_team) {
+            // No team, fall back to subscription or PayGo
+            if (data.subscription_plan) {
+                return calculateSubscriptionBalance(data);
+            }
+            return calculatePayGoBalance(data);
+        }
+        return calculateTeamBalance(data);
     }
 
-    const dailyPercentage = (subscription_balance / subscription_plan.daily_balance) * 100;
-    const weeklyPercentage = (weeklyRemaining / subscription_plan.weekly_limit) * 100;
-    const isCriticalDaily = dailyPercentage <= weeklyPercentage;
+    // If forced to PayGo mode
+    if (mode === 'paygo') {
+        return calculatePayGoBalance(data);
+    }
 
-    const tooltip = [
-        `Plan: ${subscription_plan.name}`,
-        `Daily: $${subscription_balance.toFixed(2)} / $${subscription_plan.daily_balance.toFixed(2)} (${dailyPercentage.toFixed(1)}%)`,
-        `Weekly: $${weeklyRemaining.toFixed(2)} / $${subscription_plan.weekly_limit.toFixed(2)} (${weeklyPercentage.toFixed(1)}%)`,
-        `Reset: ${nextReset} (${resetRelative})`,
-        `Expiry: ${expiryDate} (${expiryRelative})`,
-        `PayGo: $${pay_as_you_go_balance.toFixed(2)}`,
-        ``,
-        'Click to refresh'
-    ].join('\n');
-
-    if (isCriticalDaily) {
-        return {
-            type: 'daily',
-            percentage: dailyPercentage,
-            displayText: `YesCode Daily: ${dailyPercentage.toFixed(0)}%`,
-            tooltip
-        };
+    // Auto mode: Intelligent detection
+    // Priority: Team > Subscription (respect balance_preference) > PayGo
+    if (data.current_team) {
+        return calculateTeamBalance(data);
+    } else if (data.subscription_plan) {
+        // Check if user prefers PayGo only
+        if (data.balance_preference === 'payg_only') {
+            return calculatePayGoBalance(data);
+        }
+        return calculateSubscriptionBalance(data);
     } else {
-        return {
-            type: 'weekly',
-            percentage: weeklyPercentage,
-            displayText: `YesCode Weekly: ${weeklyPercentage.toFixed(0)}%`,
-            tooltip
-        };
+        // No subscription or team, use PayGo
+        return calculatePayGoBalance(data);
     }
 }

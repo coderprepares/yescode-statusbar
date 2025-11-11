@@ -3,7 +3,7 @@
   "displayName": "YesCode StatusBar",
   "publisher": "simplelumine",
   "description": "Display YesCode subscription balance in VS Code status bar",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "MIT",
   "icon": "logo.png",
   "repository": {
@@ -33,6 +33,10 @@
       {
         "command": "yescode.showBalance",
         "title": "YesCode: Show Balance"
+      },
+      {
+        "command": "yescode.switchDisplayMode",
+        "title": "YesCode: Switch Display Mode"
       }
     ]
   },
