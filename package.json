@@ -1,14 +1,14 @@
 {
-  "name": "yescode-statusbar",
-  "displayName": "YesCode StatusBar",
+  "name": "yescoder",
+  "displayName": "YesCoder",
   "publisher": "simplelumine",
-  "description": "Display YesCode subscription balance in VS Code status bar",
-  "version": "0.2.0",
+  "description": "Your essential companion for YesCode in VS Code. Monitor your balance and manage providers seamlessly.",
+  "version": "1.0.0",
   "license": "MIT",
   "icon": "logo.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/simplelumine/yescode-statusbar.git"
+    "url": "https://github.com/simplelumine/yescoder.git"
   },
   "engines": {
     "vscode": "^1.85.0"
@@ -37,6 +37,10 @@
       {
         "command": "yescode.switchDisplayMode",
         "title": "YesCode: Switch Display Mode"
+      },
+      {
+        "command": "yescode.switchVendor",
+        "title": "YesCode: Switch Vendor"
       }
     ]
   },
