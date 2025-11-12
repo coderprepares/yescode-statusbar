@@ -145,6 +145,15 @@ export async function showVendorSwitchMenu(context: vscode.ExtensionContext): Pr
 
             // Add Team Providers (User Path) - these have provider IDs
             const teamProvidersUserPath = availableProviders.providers.filter(p => p.source === 'team');
+
+            // Sort by type: claude -> openai -> google
+            const typeOrder = { 'claude': 0, 'openai': 1, 'google': 2 };
+            teamProvidersUserPath.sort((a, b) => {
+                const orderA = typeOrder[a.provider.type as keyof typeof typeOrder] ?? 999;
+                const orderB = typeOrder[b.provider.type as keyof typeof typeOrder] ?? 999;
+                return orderA - orderB;
+            });
+
             if (teamProvidersUserPath.length > 0) {
                 menuItems.push({
                     label: 'Team Providers (User Path)',
@@ -162,7 +171,7 @@ export async function showVendorSwitchMenu(context: vscode.ExtensionContext): Pr
                     const rateDisplay = (currentProvider.rate_multiplier * 100).toFixed(1);
 
                     menuItems.push({
-                        label: `$(organization) ${providerInfo.provider.display_name}`,
+                        label: `$(person) ${providerInfo.provider.display_name}`,
                         description: 'TEAM (User Path)',
                         detail: `  └ Currently: ${currentProvider.display_name} (${rateDisplay}% rate)`,
                         isTeam: false,  // Use user path API
@@ -196,17 +205,8 @@ export async function showVendorSwitchMenu(context: vscode.ExtensionContext): Pr
                 const hasNoAlternatives = !alternatives || alternatives.data.length === 0;
                 const isUsingDefault = !selection?.data;
 
-                if (hasNoAlternatives) {
-                    // Show as "Use Team Default" (no other options)
-                    teamSection.push({
-                        label: `$(organization) ${displayName}`,
-                        description: 'TEAM',
-                        detail: `  └ Currently: Use Team Default (No alternatives available)`,
-                        isTeam: true,
-                        providerType: providerType,
-                        providerDisplayName: displayName
-                    });
-                } else if (isUsingDefault) {
+                if (hasNoAlternatives || isUsingDefault) {
+                    // Show as "Use Team Default"
                     teamSection.push({
                         label: `$(organization) ${displayName}`,
                         description: 'TEAM',
@@ -276,7 +276,7 @@ async function handleUserProviderSelection(context: vscode.ExtensionContext, pro
     const alternatives = await getUserProviderAlternatives(context, provider.providerId);
 
     if (!alternatives || alternatives.data.length === 0) {
-        vscode.window.showInformationMessage(`No alternatives available for ${provider.providerDisplayName}.`);
+        // No alternatives available, just return silently
         return;
     }
 
@@ -342,14 +342,6 @@ async function handleTeamProviderSelection(context: vscode.ExtensionContext, pro
     // Fetch alternatives for this team provider
     const alternatives = await getTeamProviderAlternatives(context, provider.providerType);
 
-    if (!alternatives || alternatives.data.length === 0) {
-        vscode.window.showInformationMessage(
-            `${provider.providerDisplayName} is currently using team default settings. ` +
-            `No alternative providers are available for switching.`
-        );
-        return;
-    }
-
     // Get current selection
     const currentSelection = await getCurrentTeamSelection(context, provider.providerType);
     const currentProviderId = currentSelection?.data?.selected_provider_id;
@@ -360,25 +352,27 @@ async function handleTeamProviderSelection(context: vscode.ExtensionContext, pro
 
     // Add "Use Team Default" option at the top
     alternativeItems.push({
-        label: `${isUsingDefault ? '$(check) ' : ''}$(trash) Use Team Default`,
+        label: `${isUsingDefault ? '$(check) ' : ''}Use Team Default`,
         description: 'Reset to team settings',
         isCurrent: isUsingDefault,
         isDefaultReset: true
     });
 
-    // Add all other alternatives
-    alternatives.data.forEach(alt => {
-        const isCurrent = alt.alternative_provider_id === currentProviderId;
-        const rateDisplay = (alt.alternative_provider.rate_multiplier * 100).toFixed(1);
+    // Add all other alternatives (if any)
+    if (alternatives && alternatives.data.length > 0) {
+        alternatives.data.forEach(alt => {
+            const isCurrent = alt.alternative_provider_id === currentProviderId;
+            const rateDisplay = (alt.alternative_provider.rate_multiplier * 100).toFixed(1);
 
-        alternativeItems.push({
-            label: `${isCurrent ? '$(check) ' : ''}${alt.display_name}`,
-            description: `${rateDisplay}% rate`,
-            detail: alt.alternative_provider.description || undefined,
-            alternativeId: alt.alternative_provider_id,
-            isCurrent
+            alternativeItems.push({
+                label: `${isCurrent ? '$(check) ' : ''}${alt.display_name}`,
+                description: `${rateDisplay}% rate`,
+                detail: alt.alternative_provider.description || undefined,
+                alternativeId: alt.alternative_provider_id,
+                isCurrent
+            });
         });
-    });
+    }
 
     // Show alternatives menu
     const selectedAlternative = await vscode.window.showQuickPick(alternativeItems, {
