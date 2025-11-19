@@ -40,16 +40,32 @@ export function stopAutoRefresh(): void {
 }
 
 export async function updateStatusBar(context: vscode.ExtensionContext, isAutoRefresh: boolean): Promise<void> {
+    let previousText: string | undefined;
+    let previousTooltip: string | vscode.MarkdownString | undefined;
+    let previousBackgroundColor: vscode.ThemeColor | undefined;
+
     try {
         if (!isAutoRefresh) {
+            // Store previous state to restore in case of error during manual refresh
+            previousText = statusBarItem.text;
+            previousTooltip = statusBarItem.tooltip;
+            previousBackgroundColor = statusBarItem.backgroundColor;
+
             statusBarItem.text = `$(sync~spin) YesCode...`;
         }
 
         const data = await fetchBalance(context);
 
         if (!data) {
-            statusBarItem.text = 'YesCode: Error';
-            statusBarItem.tooltip = 'Failed to fetch balance. Click to retry.';
+            if (!isAutoRefresh) {
+                vscode.window.showErrorMessage('YesCode: Failed to fetch balance.');
+                // Restore previous state
+                if (previousText !== undefined) {
+                    statusBarItem.text = previousText;
+                }
+                statusBarItem.tooltip = previousTooltip;
+                statusBarItem.backgroundColor = previousBackgroundColor;
+            }
             return;
         }
 
@@ -77,9 +93,15 @@ export async function updateStatusBar(context: vscode.ExtensionContext, isAutoRe
 
     } catch (error) {
         console.error('Error updating balance:', error);
-        statusBarItem.text = 'YesCode: Error';
-        statusBarItem.tooltip = 'An unexpected error occurred. Click to retry.';
-        statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
+        if (!isAutoRefresh) {
+            vscode.window.showErrorMessage('YesCode: Error updating balance.');
+            // Restore previous state
+            if (previousText !== undefined) {
+                statusBarItem.text = previousText;
+            }
+            statusBarItem.tooltip = previousTooltip;
+            statusBarItem.backgroundColor = previousBackgroundColor;
+        }
     }
 }
 
