@@ -123,7 +123,12 @@ function generateMenuItems(providerData: ProviderData, selections: { userProvide
 
     // Add User-Level Providers section (subscription + payg)
     // Only show if NOT in team mode
-    if (currentMode !== 'team') {
+    // Determine effective mode
+    const isEffectiveTeamMode = currentMode === 'team' || (currentMode === 'auto' && availableProviders.is_team_member);
+
+    // Add User-Level Providers section (subscription + payg)
+    // Only show if NOT in team mode (effective)
+    if (!isEffectiveTeamMode) {
         const userProviders = availableProviders.providers.filter(
             (p: any) => p.source === 'subscription' || p.source === 'payg' || p.source === ''
         );

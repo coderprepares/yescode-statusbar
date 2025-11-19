@@ -54,7 +54,7 @@ export async function updateStatusBar(context: vscode.ExtensionContext, isAutoRe
             statusBarItem.text = `$(sync~spin) YesCode...`;
         }
 
-        const data = await fetchBalance(context);
+        const data = await fetchBalance(context, isAutoRefresh);
 
         if (!data) {
             if (!isAutoRefresh) {

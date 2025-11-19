@@ -82,19 +82,21 @@ export async function isProviderSwitchingAvailable(context: vscode.ExtensionCont
 // API Key Management
 // ============================================================================
 
-export async function fetchBalance(context: vscode.ExtensionContext): Promise<ProfileResponse | null> {
+export async function fetchBalance(context: vscode.ExtensionContext, silent: boolean = false): Promise<ProfileResponse | null> {
     try {
         const apiKey = await context.secrets.get('yescode.apiKey');
 
         if (!apiKey) {
-            vscode.window.showWarningMessage(
-                'YesCode API Key not set. Please run "YesCode: Set API Key" command.',
-                'Set API Key'
-            ).then(selection => {
-                if (selection === 'Set API Key') {
-                    vscode.commands.executeCommand('yescode.setApiKey');
-                }
-            });
+            if (!silent) {
+                vscode.window.showWarningMessage(
+                    'YesCode API Key not set. Please run "YesCode: Set API Key" command.',
+                    'Set API Key'
+                ).then(selection => {
+                    if (selection === 'Set API Key') {
+                        vscode.commands.executeCommand('yescode.setApiKey');
+                    }
+                });
+            }
             return null;
         }
 
@@ -114,8 +116,10 @@ export async function fetchBalance(context: vscode.ExtensionContext): Promise<Pr
         return data;
     } catch (error) {
         console.error('Error fetching balance:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        vscode.window.showErrorMessage(`Failed to fetch YesCode balance: ${errorMessage}`);
+        if (!silent) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            vscode.window.showErrorMessage(`Failed to fetch YesCode balance: ${errorMessage}`);
+        }
         return null;
     }
 }
