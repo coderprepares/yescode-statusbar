@@ -6,6 +6,7 @@ import {
     getTeamProviderAlternatives,
     getCurrentTeamSelection
 } from '../api';
+import { getDisplayMode } from '../core/statusbar';
 import { ProviderMenuItem } from './types';
 
 interface ProviderData {
@@ -115,53 +116,43 @@ function generateMenuItems(providerData: ProviderData, selections: { userProvide
     const { availableProviders, teamProviderAlternativesMap } = providerData;
     const { userProviderSelections, teamProviderSelectionsMap } = selections;
     const allTeamTypes = ['claude', 'openai', 'google'];
+    const currentMode = getDisplayMode();
 
     // Build the first Quick Pick menu
     const menuItems: ProviderMenuItem[] = [];
 
-    // Add Refresh Cache option
-    menuItems.push({
-        label: '$(refresh) Refresh Provider List',
-        description: 'Reload providers from server',
-        isTeam: false,
-        isRefreshCache: true
-    });
-
-    menuItems.push({
-        label: '',
-        kind: vscode.QuickPickItemKind.Separator,
-        isTeam: false
-    });
-
     // Add User-Level Providers section (subscription + payg)
-    const userProviders = availableProviders.providers.filter(
-        (p: any) => p.source === 'subscription' || p.source === 'payg' || p.source === ''
-    );
-    if (userProviders.length > 0) {
-        menuItems.push({
-            label: 'User-Level Providers',
-            kind: vscode.QuickPickItemKind.Separator,
-            isTeam: false
-        });
-
-        // Iterate through filtered user providers
-        for (const providerInfo of userProviders) {
-            // Find the corresponding selection by provider ID
-            const selection = userProviderSelections.find(
-                sel => sel?.data?.provider_id === providerInfo.provider.id
-            );
-
-            const currentProvider = selection?.data?.selected_alternative || providerInfo.provider;
-            const rateDisplay = (currentProvider.rate_multiplier * 100).toFixed(1);
-
+    // Only show if NOT in team mode
+    if (currentMode !== 'team') {
+        const userProviders = availableProviders.providers.filter(
+            (p: any) => p.source === 'subscription' || p.source === 'payg' || p.source === ''
+        );
+        if (userProviders.length > 0) {
             menuItems.push({
-                label: `$(person) ${providerInfo.provider.display_name}`,
-                description: `${providerInfo.source.toUpperCase() || 'USER'}`,
-                detail: `  └ Currently: ${currentProvider.display_name} (${rateDisplay}% rate)`,
-                isTeam: false,
-                providerId: providerInfo.provider.id,
-                providerDisplayName: providerInfo.provider.display_name
+                label: 'User-Level Providers',
+                kind: vscode.QuickPickItemKind.Separator,
+                isTeam: false
             });
+
+            // Iterate through filtered user providers
+            for (const providerInfo of userProviders) {
+                // Find the corresponding selection by provider ID
+                const selection = userProviderSelections.find(
+                    sel => sel?.data?.provider_id === providerInfo.provider.id
+                );
+
+                const currentProvider = selection?.data?.selected_alternative || providerInfo.provider;
+                const rateDisplay = (currentProvider.rate_multiplier * 100).toFixed(1);
+
+                menuItems.push({
+                    label: `$(person) ${providerInfo.provider.display_name}`,
+                    description: `${providerInfo.source.toUpperCase() || 'USER'}`,
+                    detail: `  └ Currently: ${currentProvider.display_name} (${rateDisplay}% rate)`,
+                    isTeam: false,
+                    providerId: providerInfo.provider.id,
+                    providerDisplayName: providerInfo.provider.display_name
+                });
+            }
         }
     }
 
@@ -260,6 +251,20 @@ function generateMenuItems(providerData: ProviderData, selections: { userProvide
         });
         menuItems.push(...teamSection);
     }
+
+    // Add Refresh Cache option at the bottom
+    menuItems.push({
+        label: '',
+        kind: vscode.QuickPickItemKind.Separator,
+        isTeam: false
+    });
+
+    menuItems.push({
+        label: '$(refresh) Refresh Provider List',
+        description: 'Reload providers from server',
+        isTeam: false,
+        isRefreshCache: true
+    });
 
     return menuItems;
 }
