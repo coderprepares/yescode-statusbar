@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { buildProviderMenu } from './menu';
+import { buildProviderMenu, clearProviderMenuCache } from './menu';
 import { handleUserProviderSelection } from './userHandler';
 import { handleTeamProviderSelection } from './teamHandler';
 import { isProviderSwitchingAvailable } from '../api';
@@ -26,6 +26,13 @@ export async function showVendorSwitchMenu(context: vscode.ExtensionContext): Pr
         });
 
         if (!selectedProvider || selectedProvider.kind === vscode.QuickPickItemKind.Separator) {
+            return;
+        }
+
+        // Handle Refresh Cache
+        if (selectedProvider.isRefreshCache) {
+            clearProviderMenuCache();
+            await showVendorSwitchMenu(context);
             return;
         }
 

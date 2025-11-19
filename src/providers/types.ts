@@ -5,6 +5,7 @@ export interface ProviderMenuItem extends vscode.QuickPickItem {
     providerId?: number;
     providerType?: string;
     providerDisplayName?: string;
+    isRefreshCache?: boolean;
 }
 
 export interface AlternativeMenuItem extends vscode.QuickPickItem {
