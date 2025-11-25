@@ -28,8 +28,8 @@ export function calculateTeamBalance(profile: ProfileResponse): BalanceResult {
         ? 0
         : Math.min(100, (weeklySpent / weeklyLimit) * 100);
 
-    // Display the larger percentage (more critical usage)
-    const shouldShowDaily = dailyPercentage >= weeklyPercentage;
+    // 优先显示周限，只有当周限为0时才降级到日限
+    const shouldShowWeekly = weeklyLimit > 0;
 
     const tooltip = [
         `Team Mode`,
@@ -42,19 +42,20 @@ export function calculateTeamBalance(profile: ProfileResponse): BalanceResult {
         'Click to open menu'
     ].join('\n');
 
-    // Return the percentage that represents higher usage (more critical)
-    if (shouldShowDaily) {
-        return {
-            type: 'daily',
-            percentage: dailyPercentage,
-            displayText: `YesCode Team: ${dailyPercentage.toFixed(0)}%`,
-            tooltip
-        };
-    } else {
+    // 返回周限百分比，除非周限配置为0时才降级到日限
+    if (shouldShowWeekly) {
         return {
             type: 'weekly',
             percentage: weeklyPercentage,
             displayText: `YesCode Team: ${weeklyPercentage.toFixed(0)}%`,
+            tooltip
+        };
+    } else {
+        // 降级：当周限配置为0时显示日限
+        return {
+            type: 'daily',
+            percentage: dailyPercentage,
+            displayText: `YesCode Team: ${dailyPercentage.toFixed(0)}%`,
             tooltip
         };
     }

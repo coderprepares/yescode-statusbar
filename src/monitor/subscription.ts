@@ -35,7 +35,9 @@ export function calculateSubscriptionBalance(profile: ProfileResponse): BalanceR
     const weeklyPercentage = weeklyLimit === 0
         ? 0
         : Math.min(100, (weeklyUsed / weeklyLimit) * 100);
-    const isCriticalDaily = dailyPercentage >= weeklyPercentage;
+
+    // 优先显示周限，只有当周限为0时才降级到日限
+    const shouldShowWeekly = weeklyLimit > 0;
 
     const tooltip = [
         `Subscription Mode`,
@@ -48,18 +50,19 @@ export function calculateSubscriptionBalance(profile: ProfileResponse): BalanceR
         'Click to open menu'
     ].join('\n');
 
-    if (isCriticalDaily) {
-        return {
-            type: 'daily',
-            percentage: dailyPercentage,
-            displayText: `YesCode Subs: ${dailyPercentage.toFixed(0)}%`,
-            tooltip
-        };
-    } else {
+    if (shouldShowWeekly) {
         return {
             type: 'weekly',
             percentage: weeklyPercentage,
             displayText: `YesCode Subs: ${weeklyPercentage.toFixed(0)}%`,
+            tooltip
+        };
+    } else {
+        // 降级：当周限配置为0时显示日限
+        return {
+            type: 'daily',
+            percentage: dailyPercentage,
+            displayText: `YesCode Subs: ${dailyPercentage.toFixed(0)}%`,
             tooltip
         };
     }
