@@ -5,7 +5,8 @@ import {
     ProviderAlternativesResponse,
     ProviderSelectionResponse,
     TeamProviderAlternativesResponse,
-    TeamProviderSelectionResponse
+    TeamProviderSelectionResponse,
+    UserTeamResponse
 } from './types';
 
 // ============================================================================
@@ -398,5 +399,34 @@ export async function resetTeamSelection(context: vscode.ExtensionContext, provi
         console.error('Error resetting team selection:', error);
         vscode.window.showErrorMessage(`Failed to reset to team default: ${error instanceof Error ? error.message : 'Unknown error'}`);
         return false;
+    }
+}
+
+export async function fetchTeamStatus(context: vscode.ExtensionContext): Promise<UserTeamResponse | null> {
+    try {
+        const apiKey = await context.secrets.get('yescode.apiKey');
+        if (!apiKey) {
+            return null;
+        }
+
+        const baseUrl = await getBaseUrl(context);
+        const response = await fetch(`${baseUrl}/api/v1/user/team`, {
+            method: 'GET',
+            headers: {
+                'X-API-Key': apiKey
+            }
+        });
+
+        if (!response.ok) {
+            if (response.status === 404) {
+                return null;
+            }
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return await response.json() as UserTeamResponse;
+    } catch (error) {
+        console.error('Error fetching team status:', error);
+        return null;
     }
 }

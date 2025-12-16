@@ -1,25 +1,43 @@
-import { ProfileResponse, BalanceResult } from '../types';
+import { ProfileResponse, BalanceResult, UserTeamResponse } from '../types';
 import { formatDate, calculateNextReset, getDaysUntil } from './utils';
 
-export function calculateTeamBalance(profile: ProfileResponse): BalanceResult {
+export function calculateTeamBalance(profile: ProfileResponse, teamData?: UserTeamResponse | null): BalanceResult {
     const { current_team, team_membership } = profile;
 
     if (!current_team || !team_membership) {
         throw new Error('Team data is missing');
     }
 
-    const nextReset = calculateNextReset(team_membership.last_week_reset);
-    const resetDate = new Date(team_membership.last_week_reset);
+    const nextReset = calculateNextReset(teamData ? teamData.last_week_reset : team_membership.last_week_reset);
+    const lastResetStr = teamData ? teamData.last_week_reset : team_membership.last_week_reset;
+    const resetDate = new Date(lastResetStr);
     resetDate.setDate(resetDate.getDate() + 7);
     const resetRelative = getDaysUntil(resetDate.toISOString());
     const expiryDate = formatDate(team_membership.expires_at);
     const expiryRelative = getDaysUntil(team_membership.expires_at);
 
-    const dailyBalance = current_team.per_user_daily_balance;
-    const dailySpent = Math.max(0, team_membership.daily_subscription_spending);
+    let dailyBalance: number;
+    let dailySpent: number;
+    let weeklyLimit: number;
+    let weeklySpent: number;
 
-    const weeklyLimit = current_team.weekly_limit;
-    const weeklySpent = Math.max(0, team_membership.current_week_spend);
+    if (teamData) {
+        // Daily Calculation
+        dailyBalance = teamData.user_daily_balance;
+        const dailyRemaining = teamData.user_daily_remaining_balance;
+        dailySpent = Math.max(0, dailyBalance - dailyRemaining);
+
+        // Weekly Calculation
+        weeklyLimit = teamData.weekly_limit;
+        weeklySpent = Math.max(0, teamData.current_week_spend);
+    } else {
+        // Fallback to profile data if team API fails
+        dailyBalance = current_team.per_user_daily_balance;
+        dailySpent = Math.max(0, team_membership.daily_subscription_spending);
+
+        weeklyLimit = current_team.weekly_limit;
+        weeklySpent = Math.max(0, team_membership.current_week_spend);
+    }
 
     const dailyPercentage = dailyBalance === 0
         ? 0

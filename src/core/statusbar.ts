@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
-import { fetchBalance } from '../api';
+import { fetchBalance, fetchTeamStatus } from '../api';
 import { calculateBalance, DisplayMode } from '../monitor/balance';
+import { UserTeamResponse } from '../types';
 
 let statusBarItem: vscode.StatusBarItem;
 let refreshTimer: NodeJS.Timeout | undefined;
@@ -69,7 +70,12 @@ export async function updateStatusBar(context: vscode.ExtensionContext, isAutoRe
             return;
         }
 
-        const result = calculateBalance(data, currentDisplayMode);
+        let teamData: UserTeamResponse | null = null;
+        if (currentDisplayMode === 'team' || (currentDisplayMode === 'auto' && data.current_team)) {
+            teamData = await fetchTeamStatus(context);
+        }
+
+        const result = calculateBalance(data, currentDisplayMode, teamData);
 
         statusBarItem.text = result.displayText;
         statusBarItem.tooltip = result.tooltip;

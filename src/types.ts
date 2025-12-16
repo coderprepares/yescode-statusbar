@@ -28,6 +28,7 @@ export interface ProfileResponse {
     subscription_expiry: string | null;
     current_team?: Team | null;
     team_membership?: TeamMembership;
+    username: string;
 }
 
 export interface BalanceResult {
@@ -130,4 +131,43 @@ export interface TeamProviderSelection {
 
 export interface TeamProviderSelectionResponse {
     data: TeamProviderSelection | null;
+}
+
+export interface UserTeamMemberCost {
+    username: string;
+    cost: number;
+    cost_daily: number;
+    cost_weekly: number;
+    cost_last_1h: number;
+    cost_last_5h: number;
+    weekly_limit: number;
+}
+
+export interface UserTeamResponse {
+    can_purchase_ownership: boolean;
+    current_month_spend: number;
+    current_week_spend: number;
+    daily_balance: number;
+    daily_remaining_balance: number;
+    has_team: boolean;
+    has_team_owner: boolean;
+    is_owner: boolean;
+    is_team_wide_weekly_limit: boolean;
+    last_month_reset: string;
+    last_week_reset: string;
+    member_costs: UserTeamMemberCost[];
+    member_week_spend: number;
+    monthly_limit: number;
+    role: string;
+    team: Team;
+    team_api_key: string;
+    team_daily_balance: number;
+    team_daily_remaining_balance: number;
+    team_monthly_limit: number;
+    team_week_spend: number;
+    total_team_cost: number;
+    user_daily_balance: number;
+    user_daily_remaining_balance: number;
+    weekly_limit: number;
+    weekly_limit_override: number;
 }

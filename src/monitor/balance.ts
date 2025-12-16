@@ -1,11 +1,11 @@
-import { ProfileResponse, BalanceResult } from '../types';
+import { ProfileResponse, BalanceResult, UserTeamResponse } from '../types';
 import { calculateSubscriptionBalance } from './subscription';
 import { calculateTeamBalance } from './team';
 import { calculatePayGoBalance } from './paygo';
 
 export type DisplayMode = 'auto' | 'subscription' | 'team' | 'paygo';
 
-export function calculateBalance(data: ProfileResponse, mode: DisplayMode = 'auto'): BalanceResult {
+export function calculateBalance(data: ProfileResponse, mode: DisplayMode = 'auto', teamData?: UserTeamResponse | null): BalanceResult {
     // If forced to subscription mode
     if (mode === 'subscription') {
         if (!data.subscription_plan) {
@@ -24,7 +24,7 @@ export function calculateBalance(data: ProfileResponse, mode: DisplayMode = 'aut
             }
             return calculatePayGoBalance(data);
         }
-        return calculateTeamBalance(data);
+        return calculateTeamBalance(data, teamData);
     }
 
     // If forced to PayGo mode
@@ -35,7 +35,7 @@ export function calculateBalance(data: ProfileResponse, mode: DisplayMode = 'aut
     // Auto mode: Intelligent detection
     // Priority: Team > Subscription (respect balance_preference) > PayGo
     if (data.current_team) {
-        return calculateTeamBalance(data);
+        return calculateTeamBalance(data, teamData);
     } else if (data.subscription_plan) {
         // Check if user prefers PayGo only
         if (data.balance_preference === 'payg_only') {
